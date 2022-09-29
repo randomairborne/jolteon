@@ -1,0 +1,8 @@
+{
+  "name": "mcpacks",
+  "version": "0.0.0",
+  "devDependencies": {
+    "wrangler": "2.0.25"
+  },
+  "private": true
+}
