@@ -1,10 +1,10 @@
 use ed25519_dalek::{PublicKey, Signature, Verifier};
-use serde_json::{json, Value};
+use twilight_model::application::interaction::Interaction;
 use worker::*;
 
 mod handle;
 #[event(fetch)]
-pub async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
+async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
     console_error_panic_hook::set_once();
     let body = req.bytes().await.unwrap();
     validate_discord_sig(
@@ -14,9 +14,8 @@ pub async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<R
     )
     .await
     .unwrap();
-    let item: twilight_model::application::interaction::application_command::CommandData =
-        serde_json::from_slice(&body).unwrap();
-    handle::handle(req, item)
+    let item: Interaction = serde_json::from_slice(&body).unwrap();
+    handle::handle(req, env, item).await
 }
 
 // TODO clean this up and use less unwraps
