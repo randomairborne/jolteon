@@ -2,9 +2,11 @@ use ed25519_dalek::{PublicKey, Signature, Verifier};
 use twilight_model::application::interaction::Interaction;
 use worker::*;
 
+mod tag;
 mod handle;
-mod cmd;
+mod mgmt;
 
+#[allow(dead_code)]
 #[event(fetch)]
 async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
     console_error_panic_hook::set_once();
@@ -22,7 +24,7 @@ async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
 // TODO clean this up and use less unwraps
 fn validate_discord_sig(
     headers: &Headers,
-    body: &Vec<u8>,
+    body: &[u8],
     pub_key_string: String,
 ) -> std::result::Result<(), ed25519_dalek::SignatureError> {
     let sig_hex = hex::decode(headers.get("X-Signature-Ed25519").unwrap().unwrap()).unwrap();
@@ -39,6 +41,11 @@ fn validate_discord_sig(
         .chain(body.iter())
         .cloned()
         .collect();
-    pub_key.verify(&to_be_verified.as_slice(), &sig)?;
+    pub_key.verify(to_be_verified.as_slice(), &sig)?;
     Ok(())
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
+pub struct TagMetadata {
+    pub allow_pings: bool,
 }
