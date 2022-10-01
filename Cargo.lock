@@ -303,6 +303,7 @@ dependencies = [
  "hex",
  "serde",
  "serde_json",
+ "thiserror",
  "twilight-model",
  "worker",
 ]

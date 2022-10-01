@@ -3,6 +3,8 @@ use twilight_model::application::interaction::Interaction;
 use worker::*;
 
 mod handle;
+mod cmd;
+
 #[event(fetch)]
 async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
     console_error_panic_hook::set_once();
@@ -12,14 +14,13 @@ async fn main(mut req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         &body,
         env.secret("DISCORD_PUBLIC_KEY").unwrap().to_string(),
     )
-    .await
     .unwrap();
     let item: Interaction = serde_json::from_slice(&body).unwrap();
-    handle::handle(req, env, item).await
+    handle::handle(env, item).await
 }
 
 // TODO clean this up and use less unwraps
-async fn validate_discord_sig(
+fn validate_discord_sig(
     headers: &Headers,
     body: &Vec<u8>,
     pub_key_string: String,

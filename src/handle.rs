@@ -1,48 +1,46 @@
-use serde_json::json;
+use std::collections::HashMap;
+
 use twilight_model::{
-    application::interaction::{Interaction, InteractionType},
-    channel::message::MessageFlags,
+    application::interaction::{
+        application_command::{CommandData, CommandOptionValue},
+        Interaction, InteractionData,
+    },
+    channel::message::{MessageFlags, AllowedMentions},
     http::interaction::{InteractionResponse, InteractionResponseData, InteractionResponseType},
 };
-use worker::{Request, Response};
-
-pub async fn handle(req: Request, env: worker::Env, data: Interaction) -> worker::Result<Response> {
-    if let Ok(kv) = env.kv("tags") {
-        match data.kind {
-            InteractionType::Ping => Response::from_json(&json!({ "kind": 1 })),
-            InteractionType::ApplicationCommand => handle_command(req, kv, data).await,
-            InteractionType::ApplicationCommandAutocomplete => {
-                handle_autocomplete(req, kv, data).await
-            }
-            _ => Response::empty(),
+use worker::Response;
+pub async fn handle(env: worker::Env, data: Interaction) -> worker::Result<Response> {
+    let kv = env.kv("tags")?;
+    let sender = data.member.unwrap_or_else(|| data.user);
+    if let Some(data) = data.data {
+        if let InteractionData::ApplicationCommand(cmd) = data {
+            handle_command(kv, *cmd, ).await
+        } else {
+            error("InteractionData was wrong type")
         }
     } else {
-        error_response("The bot is misconfigured with Cloudflare KV.")
+        error("Interaction did not contain InteractionData!")
     }
 }
 
-async fn handle_command(
-    req: Request,
-    kv: worker::kv::KvStore,
-    data: Interaction,
-) -> worker::Result<Response> {
-    Response::empty()
+async fn handle_command(kv: worker::kv::KvStore, cmd: CommandData) -> worker::Result<Response> {
+    let options: HashMap<String, CommandOptionValue> =
+        cmd.options.iter().map(|t| (t.name, t.value)).collect();
+    match cmd.name.as_str() {
+        "tag" => {crate::cmd::tag(kv, options)},
+        "tagmanage" => crate::cmd::manage(kv, options),
+        _ => error("That command is not recognized"),
+    }
 }
 
-async fn handle_autocomplete(
-    req: Request,
-    kv: worker::kv::KvStore,
-    data: Interaction,
-) -> worker::Result<Response> {
-    Response::empty()
-}
-
-fn error_response(message: impl ToString) -> worker::Result<Response> {
+pub fn error(message: impl ToString) -> worker::Result<Response> {
     let mut flags = MessageFlags::empty();
     flags.insert(MessageFlags::EPHEMERAL);
+    let allowed_mentions = AllowedMentions::builder().build();
     let resp = InteractionResponseData {
         flags: Some(flags),
         content: Some(message.to_string()),
+        allowed_mentions: Some(allowed_mentions),
         ..Default::default()
     };
     Response::from_json(&InteractionResponse {
