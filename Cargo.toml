@@ -2,6 +2,8 @@
 name = "jolteon"
 version = "0.0.0"
 edition = "2021"
+description = "A slash-command based discord tag bot"
+repository = "https://github.com/randomairborne/jolteon"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
