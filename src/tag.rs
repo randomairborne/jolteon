@@ -6,7 +6,7 @@ use twilight_model::{
     http::interaction::{InteractionResponse, InteractionResponseData, InteractionResponseType},
     id::{marker::UserMarker, Id},
 };
-use worker::{kv::KvStore, Response};
+use worker::{kv::KvStore, Response, console_error};
 
 use crate::handle::error;
 
@@ -23,6 +23,7 @@ pub async fn tag(
     } else {
         return error("Discord failed to send the tag name field.");
     };
+    console_error!("{:#?}", options.get("mention"));
     let mention = if let Some(CommandOptionValue::User(u)) = options.get("mention") {
         Some(*u)
     } else {
@@ -37,7 +38,7 @@ pub async fn tag(
             if let Some(metadata) = val.1 {
                 send_tag(content, mention, metadata.allow_pings)
             } else {
-                send_tag(content, None, false)
+                send_tag(content, mention, false)
             }
         } else {
             error(format!("The tag {name} has no content!"))
@@ -53,6 +54,7 @@ fn send_tag(
     can_mention: bool,
 ) -> worker::Result<Response> {
     let mut message = message.to_string();
+    console_error!("msg: {}, wants to mention: {:?}, can mention: {}", message, wants_to_mention, can_mention);
     let allowed_mentions = if let Some(mentions) = wants_to_mention {
         if can_mention {
             AllowedMentions::builder().user_ids(vec![mentions]).build()
