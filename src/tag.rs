@@ -23,7 +23,7 @@ pub async fn tag(
     } else {
         return error("Discord failed to send the tag name field.");
     };
-    let is_mention = if let Some(CommandOptionValue::User(u)) = options.get("mention") {
+    let mention = if let Some(CommandOptionValue::User(u)) = options.get("mention") {
         Some(*u)
     } else {
         None
@@ -35,17 +35,9 @@ pub async fn tag(
     {
         if let Some(content) = val.0 {
             if let Some(metadata) = val.1 {
-                if metadata.allow_pings {
-                    if let Some(mention) = is_mention {
-                        send_tag(format!("<@{}>:\n\n{}", content, mention), Some(mention))
-                    } else {
-                        send_tag(content, None)
-                    }
-                } else {
-                    send_tag(content, None)
-                }
+                send_tag(content, mention, metadata.allow_pings)
             } else {
-                send_tag(content, None)
+                send_tag(content, None, false)
             }
         } else {
             error(format!("The tag {name} has no content!"))
@@ -57,15 +49,24 @@ pub async fn tag(
 
 fn send_tag(
     message: impl ToString,
-    maybe_mention: Option<Id<UserMarker>>,
+    wants_to_mention: Option<Id<UserMarker>>,
+    can_mention: bool,
 ) -> worker::Result<Response> {
-    let allowed_mentions = if let Some(mentions) = maybe_mention {
-        AllowedMentions::builder().user_ids(vec![mentions]).build()
+    let mut message = message.to_string();
+    let allowed_mentions = if let Some(mentions) = wants_to_mention {
+        if can_mention {
+            AllowedMentions::builder().user_ids(vec![mentions]).build()
+        } else {
+            AllowedMentions::builder().build()
+        }
     } else {
         AllowedMentions::builder().build()
     };
+    if let Some(mention) = wants_to_mention {
+        message = format!("<@{}>:\n\n{}", mention, message);
+    }
     let resp = InteractionResponseData {
-        content: Some(message.to_string()),
+        content: Some(message),
         allowed_mentions: Some(allowed_mentions),
         ..Default::default()
     };
