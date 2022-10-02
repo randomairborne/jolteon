@@ -23,27 +23,37 @@ pub async fn tag(
     } else {
         return error("Discord failed to send the tag name field.");
     };
-    let mention = if let Some(CommandOptionValue::User(u)) = options.get("mention") {
+    let is_mention = if let Some(CommandOptionValue::User(u)) = options.get("mention") {
         Some(*u)
     } else {
         None
     };
-    if let Ok(val) = kv.get(name).text_with_metadata::<crate::TagMetadata>().await {
+    if let Ok(val) = kv
+        .get(name)
+        .text_with_metadata::<crate::TagMetadata>()
+        .await
+    {
         if let Some(content) = val.0 {
             if let Some(metadata) = val.1 {
-                if metadata.allow_pings {send_tag(content, mention)} else {send_tag(content, None)}
+                if metadata.allow_pings {
+                    if let Some(mention) = is_mention {
+                        send_tag(format!("<@{}>:\n\n{}", content, mention), Some(mention))
+                    } else {
+                        send_tag(content, None)
+                    }
+                } else {
+                    send_tag(content, None)
+                }
             } else {
                 send_tag(content, None)
             }
         } else {
-            error("The tag has no content!")
+            error(format!("The tag {name} has no content!"))
         }
     } else {
-        error("CloudFlare KV error fetching tag")
+        error(format!("CloudFlare KV error fetching tag {name}"))
     }
 }
-
-
 
 fn send_tag(
     message: impl ToString,

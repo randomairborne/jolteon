@@ -2,9 +2,9 @@ use ed25519_dalek::{PublicKey, Signature, Verifier};
 use twilight_model::application::interaction::Interaction;
 use worker::*;
 
-mod tag;
 mod handle;
 mod mgmt;
+mod tag;
 
 #[allow(dead_code)]
 #[event(fetch)]

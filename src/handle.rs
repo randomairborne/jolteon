@@ -23,8 +23,11 @@ pub async fn handle(env: worker::Env, data: Interaction) -> worker::Result<Respo
 }
 
 async fn handle_command(kv: worker::kv::KvStore, cmd: CommandData) -> worker::Result<Response> {
-    let options: HashMap<String, CommandOptionValue> =
-        cmd.options.iter().map(|t| (t.name.clone(), t.value.clone())).collect();
+    let options: HashMap<String, CommandOptionValue> = cmd
+        .options
+        .iter()
+        .map(|t| (t.name.clone(), t.value.clone()))
+        .collect();
     match cmd.name.as_str() {
         "tag" => crate::tag::tag(kv, options).await,
         "tagmanage" => crate::mgmt::manage(kv, options).await,
