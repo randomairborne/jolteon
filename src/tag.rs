@@ -4,15 +4,19 @@ use twilight_model::{
     application::interaction::application_command::CommandOptionValue,
     channel::message::AllowedMentions,
     http::interaction::{InteractionResponse, InteractionResponseData, InteractionResponseType},
-    id::{marker::UserMarker, Id},
+    id::{
+        marker::{GuildMarker, UserMarker},
+        Id,
+    },
 };
-use worker::{kv::KvStore, Response, console_error};
+use worker::{kv::KvStore, Response};
 
 use crate::handle::error;
 
 pub async fn tag(
     kv: KvStore,
     options: HashMap<String, CommandOptionValue>,
+    guild_id: Id<GuildMarker>,
 ) -> worker::Result<Response> {
     let name = if let Some(val) = options.get("name") {
         if let CommandOptionValue::String(s) = val {
@@ -29,7 +33,7 @@ pub async fn tag(
         None
     };
     if let Ok(val) = kv
-        .get(name)
+        .get(&format!("{guild_id}-{name}"))
         .text_with_metadata::<crate::TagMetadata>()
         .await
     {
