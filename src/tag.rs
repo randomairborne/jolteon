@@ -23,7 +23,6 @@ pub async fn tag(
     } else {
         return error("Discord failed to send the tag name field.");
     };
-    console_error!("{:#?}", options.get("mention"));
     let mention = if let Some(CommandOptionValue::User(u)) = options.get("mention") {
         Some(*u)
     } else {
