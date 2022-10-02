@@ -16,7 +16,7 @@ pub async fn tag(
 ) -> worker::Result<Response> {
     let name = if let Some(val) = options.get("name") {
         if let CommandOptionValue::String(s) = val {
-            s
+            s.trim()
         } else {
             return error("Discord sent the wrong type for the tag name field.");
         }
@@ -53,7 +53,6 @@ fn send_tag(
     can_mention: bool,
 ) -> worker::Result<Response> {
     let mut message = message.to_string();
-    console_error!("msg: {}, wants to mention: {:?}, can mention: {}", message, wants_to_mention, can_mention);
     let allowed_mentions = if let Some(mentions) = wants_to_mention {
         if can_mention {
             AllowedMentions::builder().user_ids(vec![mentions]).build()
