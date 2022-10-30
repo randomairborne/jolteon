@@ -64,4 +64,5 @@ pub enum SignatureValidationError {
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct TagMetadata {
     pub allow_pings: bool,
+    pub hidden: bool,
 }

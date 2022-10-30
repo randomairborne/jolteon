@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use twilight_model::{
-    application::interaction::application_command::CommandOptionValue,
+    application::{interaction::application_command::CommandOptionValue, command::CommandOptionChoice},
     channel::message::AllowedMentions,
     http::interaction::{InteractionResponse, InteractionResponseType},
     id::{
@@ -49,6 +49,23 @@ pub async fn tag(
         }
     } else {
         error(format!("CloudFlare KV error fetching tag {name}"))
+    }
+}
+
+pub async fn autocomplete(kv: KvStore, guild_id: Id<GuildMarker>,) -> InteractionResponse {
+    let kv_options = if let Ok(val) = kv
+        .list().prefix(&format!("{guild_id}-{name}")).execute()
+        .await
+    {
+        val
+    } else {
+        error(format!("CloudFlare KV error fetching tag {name}"))
+    }
+    CommandOptionChoice
+    let ird = InteractionResponseDataBuilder::new().choices(choices);
+    InteractionResponse {
+        kind: InteractionResponseType::ApplicationCommandAutocompleteResult,
+        data: Some(ird)
     }
 }
 

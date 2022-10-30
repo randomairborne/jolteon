@@ -17,22 +17,27 @@ fn get() -> [Command; 2] {
                 .option(BooleanBuilder::new(
                     "allow_pings",
                     "Allow users to be notified when mentioned",
-                ))
-                .option(BooleanBuilder::new("hidden", "Hide tag from autocomplete")),
+                )),
         )
         .option(
             SubCommandBuilder::new("edit", "Edit a tag")
-                .option(StringBuilder::new("name", "Tag name").required(true))
+                .option(
+                    StringBuilder::new("name", "Tag name")
+                        .required(true)
+                        .autocomplete(true),
+                )
                 .option(StringBuilder::new("content", "What the tag should send"))
                 .option(BooleanBuilder::new(
                     "allow_pings",
                     "Allow users to be notified when mentioned",
-                ))
-                .option(BooleanBuilder::new("hidden", "Hide tag from autocomplete")),
+                )),
         )
         .option(
-            SubCommandBuilder::new("delete", "Delete a tag")
-                .option(StringBuilder::new("name", "Tag name").required(true)),
+            SubCommandBuilder::new("delete", "Delete a tag").option(
+                StringBuilder::new("name", "Tag name")
+                    .required(true)
+                    .autocomplete(true),
+            ),
         )
         .validate()
         .expect("Level slash command is invalid!")
