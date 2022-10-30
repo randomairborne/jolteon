@@ -6,6 +6,7 @@ use twilight_model::{
     http::interaction::{InteractionResponse, InteractionResponseType},
     id::{marker::GuildMarker, Id},
 };
+use twilight_util::builder::InteractionResponseDataBuilder;
 use worker::{kv::KvStore, Response};
 
 use crate::handle::error;
@@ -15,8 +16,9 @@ pub async fn manage(
     options: HashMap<String, CommandOptionValue>,
     guild_id: Id<GuildMarker>,
 ) -> InteractionResponse {
+    let ird = InteractionResponseDataBuilder::new().content(msg).build();
     InteractionResponse {
         kind: InteractionResponseType::ChannelMessageWithSource,
-        data: None,
+        data: Some(ird),
     }
 }
