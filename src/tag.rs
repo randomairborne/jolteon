@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
 use twilight_model::{
-    application::{interaction::application_command::CommandOptionValue, command::CommandOptionChoice},
+    application::{
+        command::CommandOptionChoice, interaction::application_command::CommandOptionValue,
+    },
     channel::message::AllowedMentions,
     http::interaction::{InteractionResponse, InteractionResponseType},
     id::{
@@ -33,13 +35,13 @@ pub async fn tag(
     } else {
         None
     };
-    if let Ok(val) = kv
+    if let Ok(tagdata) = kv
         .get(&format!("{guild_id}-{name}"))
         .text_with_metadata::<crate::TagMetadata>()
         .await
     {
-        if let Some(content) = val.0 {
-            if let Some(metadata) = val.1 {
+        if let Some(content) = tagdata.0 {
+            if let Some(metadata) = tagdata.1 {
                 send_tag(content, mention, metadata.allow_pings)
             } else {
                 send_tag(content, mention, false)
@@ -48,24 +50,47 @@ pub async fn tag(
             error(format!("The tag {name} has no content!"))
         }
     } else {
-        error(format!("CloudFlare KV error fetching tag {name}"))
+        error("Cloudflare KV error!")
     }
 }
 
-pub async fn autocomplete(kv: KvStore, guild_id: Id<GuildMarker>,) -> InteractionResponse {
+pub async fn autocomplete(
+    kv: KvStore,
+    guild_id: Id<GuildMarker>,
+    name: &str,
+) -> InteractionResponse {
     let kv_options = if let Ok(val) = kv
-        .list().prefix(&format!("{guild_id}-{name}")).execute()
+        .list()
+        .prefix(format!("{guild_id}-{name}"))
+        .execute()
         .await
     {
         val
     } else {
-        error(format!("CloudFlare KV error fetching tag {name}"))
+        return error(format!("CloudFlare KV error fetching tag {name}"));
+    };
+    let mut keys = Vec::with_capacity(kv_options.keys.len());
+    for key in kv_options.keys {
+        if key
+            .metadata
+            .unwrap()
+            .get("hidden")
+            .unwrap()
+            .as_bool()
+            .unwrap()
+        {
+            continue;
+        }
+        keys.push(CommandOptionChoice::String {
+            name: name.to_string(),
+            name_localizations: None,
+            value: name.to_string(),
+        });
     }
-    CommandOptionChoice
-    let ird = InteractionResponseDataBuilder::new().choices(choices);
+    let ird = InteractionResponseDataBuilder::new().choices(keys).build();
     InteractionResponse {
         kind: InteractionResponseType::ApplicationCommandAutocompleteResult,
-        data: Some(ird)
+        data: Some(ird),
     }
 }
 

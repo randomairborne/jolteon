@@ -8,5 +8,6 @@ kv_namespaces = [
     { binding = "tags", id = "a7ec87de4f7a410f85dbd18d0c3795e6" }
 ]
 
+
 [build]
 command = "cargo install -q worker-build && worker-build --release"

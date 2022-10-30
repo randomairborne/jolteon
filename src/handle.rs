@@ -26,7 +26,7 @@ pub async fn handle(env: worker::Env, interaction: Interaction) -> InteractionRe
     if let Some(data) = interaction.data {
         match interaction.kind {
             InteractionType::Ping => {
-                return InteractionResponse {
+            InteractionResponse {
                     kind: InteractionResponseType::Pong,
                     data: None,
                 }
@@ -44,7 +44,14 @@ pub async fn handle(env: worker::Env, interaction: Interaction) -> InteractionRe
                     error("InteractionData was wrong type!")
                 }
             }
-            InteractionType::ApplicationCommandAutocomplete => todo!(),
+            InteractionType::ApplicationCommandAutocomplete => {if let InteractionData::ApplicationCommand(cmd) = data {
+                let options: HashMap<String, CommandOptionValue> =
+                    cmd.options.into_iter().map(|t| (t.name, t.value)).collect();
+                    if let Some(CommandOptionValue::String(tn)) = options.get("name") {
+                    crate::tag::autocomplete(kv, guild_id,tn ).await} else {error("tag name was not sent!")}
+            } else {
+                error("InteractionData was wrong type!")
+            }},
             _ => error("Only pings, ApplicationCommands, and ApplicationCommandAutocompletes are supported."),
         }
     } else {

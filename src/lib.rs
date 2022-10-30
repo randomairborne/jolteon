@@ -2,10 +2,10 @@ use ed25519_dalek::{PublicKey, Signature, Verifier};
 use twilight_model::application::interaction::Interaction;
 use worker::*;
 
-mod cmds;
 mod handle;
 mod mgmt;
 mod tag;
+mod cmds;
 
 #[allow(dead_code)]
 #[event(fetch)]
@@ -59,6 +59,11 @@ pub enum SignatureValidationError {
     MissingSignatureHeader,
     #[error("Missing X-Signature-Timestamp header")]
     MissingTimestampHeader,
+}
+
+#[event(scheduled)]
+async fn scheduled(event: worker::ScheduledEvent, env: worker::Env, ctx: worker::ScheduleContext) {
+    
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
