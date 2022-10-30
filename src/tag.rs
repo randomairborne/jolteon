@@ -3,13 +3,14 @@ use std::collections::HashMap;
 use twilight_model::{
     application::interaction::application_command::CommandOptionValue,
     channel::message::AllowedMentions,
-    http::interaction::{InteractionResponse, InteractionResponseData, InteractionResponseType},
+    http::interaction::{InteractionResponse, InteractionResponseType},
     id::{
         marker::{GuildMarker, UserMarker},
         Id,
     },
 };
-use worker::{kv::KvStore, Response};
+use twilight_util::builder::InteractionResponseDataBuilder;
+use worker::kv::KvStore;
 
 use crate::handle::error;
 
@@ -17,7 +18,7 @@ pub async fn tag(
     kv: KvStore,
     options: HashMap<String, CommandOptionValue>,
     guild_id: Id<GuildMarker>,
-) -> worker::Result<Response> {
+) -> InteractionResponse {
     let name = if let Some(val) = options.get("name") {
         if let CommandOptionValue::String(s) = val {
             s.trim()
@@ -55,7 +56,7 @@ fn send_tag(
     message: impl ToString,
     wants_to_mention: Option<Id<UserMarker>>,
     can_mention: bool,
-) -> worker::Result<Response> {
+) -> InteractionResponse {
     let mut message = message.to_string();
     let allowed_mentions = if let Some(mentions) = wants_to_mention {
         if can_mention {
@@ -67,15 +68,14 @@ fn send_tag(
         AllowedMentions::builder().build()
     };
     if let Some(mention) = wants_to_mention {
-        message = format!("<@{}>:\n\n{}", mention, message);
+        message = format!("<@!{}>:\n\n{}", mention, message);
     }
-    let resp = InteractionResponseData {
-        content: Some(message),
-        allowed_mentions: Some(allowed_mentions),
-        ..Default::default()
-    };
-    Response::from_json(&InteractionResponse {
+    let resp = InteractionResponseDataBuilder::new()
+        .content(message)
+        .allowed_mentions(allowed_mentions)
+        .build();
+    InteractionResponse {
         kind: InteractionResponseType::ChannelMessageWithSource,
         data: Some(resp),
-    })
+    }
 }

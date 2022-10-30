@@ -2,61 +2,63 @@ use std::collections::HashMap;
 
 use twilight_model::{
     application::interaction::{
-        application_command::CommandOptionValue, Interaction, InteractionData,
+        application_command::CommandOptionValue, Interaction, InteractionData, InteractionType,
     },
-    channel::message::{AllowedMentions, MessageFlags},
-    http::interaction::{InteractionResponse, InteractionResponseData, InteractionResponseType},
+    channel::message::MessageFlags,
+    http::interaction::{InteractionResponse, InteractionResponseType},
 };
-use worker::Response;
-pub async fn handle(env: worker::Env, data: Interaction) -> worker::Result<Response> {
-    if !data.is_guild() || data.guild_id.is_none() {
+use twilight_util::builder::InteractionResponseDataBuilder;
+pub async fn handle(env: worker::Env, interaction: Interaction) -> InteractionResponse {
+    if !interaction.is_guild() || interaction.guild_id.is_none() {
         return error(
             "Jolteon only works in guilds. Invite it with <https://valk.sh/jolteon-invite>!",
         );
     }
-    let invoker = if let Some(member) = data.member {
-        member
-    } else {
-        return error("No member sent with tag!");
-    };
-    let guild_id = if let Some(guild_id) = data.guild_id {
+    let guild_id = if let Some(guild_id) = interaction.guild_id {
         guild_id
     } else {
         return error("No guild ID - This should be unreachable!");
     };
-    let kv = env.kv("tags")?;
-    if let Some(data) = data.data {
-        if let InteractionData::ApplicationCommand(cmd) = data {
-            let options: HashMap<String, CommandOptionValue> = cmd
-                .options
-                .iter()
-                .map(|t| (t.name.clone(), t.value.clone()))
-                .collect();
-            match cmd.name.as_str() {
-                "tag" => crate::tag::tag(kv, options, guild_id).await,
-                "tagmanage" => crate::mgmt::manage(kv, options, invoker, guild_id).await,
-                _ => error("That command is not recognized."),
+    let kv = match env.kv("tags") {
+        Ok(val) => val,
+        Err(e) => return error(format!("No KV: {e}")),
+    };
+    if let Some(data) = interaction.data {
+        match interaction.kind {
+            InteractionType::Ping => {
+                return InteractionResponse {
+                    kind: InteractionResponseType::Pong,
+                    data: None,
+                }
             }
-        } else {
-            error("InteractionData was wrong type")
+            InteractionType::ApplicationCommand => {
+                if let InteractionData::ApplicationCommand(cmd) = data {
+                    let options: HashMap<String, CommandOptionValue> =
+                        cmd.options.into_iter().map(|t| (t.name, t.value)).collect();
+                    match cmd.name.as_str() {
+                        "tag" => crate::tag::tag(kv, options, guild_id).await,
+                        "tagmanage" => crate::mgmt::manage(kv, options, guild_id).await,
+                        _ => error("That command is not recognized."),
+                    }
+                } else {
+                    error("InteractionData was wrong type!")
+                }
+            }
+            InteractionType::ApplicationCommandAutocomplete => todo!(),
+            _ => error("Only pings, ApplicationCommands, and ApplicationCommandAutocompletes are supported."),
         }
     } else {
         error("Interaction did not contain InteractionData!")
     }
 }
 
-pub fn error(message: impl ToString) -> worker::Result<Response> {
-    let mut flags = MessageFlags::empty();
-    flags.insert(MessageFlags::EPHEMERAL);
-    let allowed_mentions = AllowedMentions::builder().build();
-    let resp = InteractionResponseData {
-        flags: Some(flags),
-        content: Some(message.to_string()),
-        allowed_mentions: Some(allowed_mentions),
-        ..Default::default()
-    };
-    Response::from_json(&InteractionResponse {
+pub fn error(message: impl ToString) -> InteractionResponse {
+    let resp = InteractionResponseDataBuilder::new()
+        .content(message.to_string())
+        .flags(MessageFlags::EPHEMERAL)
+        .build();
+    InteractionResponse {
         kind: InteractionResponseType::ChannelMessageWithSource,
         data: Some(resp),
-    })
+    }
 }
