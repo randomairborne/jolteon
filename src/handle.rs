@@ -11,7 +11,7 @@ use twilight_util::builder::InteractionResponseDataBuilder;
 pub async fn handle(env: worker::Env, interaction: Interaction) -> InteractionResponse {
     if !interaction.is_guild() || interaction.guild_id.is_none() {
         return error(
-            "Jolteon only works in guilds. Invite it with <https://valk.sh/jolteon-invite>!",
+            "Jolteon only works in guilds. Invite me with the button in my profile!",
         );
     }
     let guild_id = if let Some(guild_id) = interaction.guild_id {

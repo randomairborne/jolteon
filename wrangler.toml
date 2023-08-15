@@ -1,13 +1,6 @@
 name = "jolteon"
-workers_dev = true
-
-main = "build/worker/shim.mjs"
-compatibility_date = "2022-01-20"
+compatibility_date = "2023-08-01"
 
 kv_namespaces = [
     { binding = "tags", id = "a7ec87de4f7a410f85dbd18d0c3795e6" }
 ]
-
-
-[build]
-command = "cargo install -q worker-build && worker-build --release"

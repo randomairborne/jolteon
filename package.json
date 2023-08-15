@@ -2,7 +2,10 @@
   "name": "mcpacks",
   "version": "0.0.0",
   "devDependencies": {
-    "wrangler": "2.0.25"
+    "wrangler": "3.0.0"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "discord-api-types": "^0.37.51"
+  }
 }

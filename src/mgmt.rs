@@ -16,7 +16,8 @@ pub async fn manage(
     options: HashMap<String, CommandOptionValue>,
     guild_id: Id<GuildMarker>,
 ) -> InteractionResponse {
-    let ird = InteractionResponseDataBuilder::new().content(msg).build();
+
+    let ird = InteractionResponseDataBuilder::new().content("unimplemented, pain").build();
     InteractionResponse {
         kind: InteractionResponseType::ChannelMessageWithSource,
         data: Some(ird),

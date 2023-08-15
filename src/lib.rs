@@ -1,11 +1,11 @@
-use ed25519_dalek::{PublicKey, Signature, Verifier};
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use twilight_model::application::interaction::Interaction;
 use worker::*;
 
+mod cmds;
 mod handle;
 mod mgmt;
 mod tag;
-mod cmds;
 
 #[allow(dead_code)]
 #[event(fetch)]
@@ -32,11 +32,12 @@ pub fn validate_discord_sig(
             .get("X-Signature-Ed25519")?
             .ok_or(SignatureValidationError::MissingSignatureHeader)?,
     )?;
-    let sig = Signature::from_bytes(&sig_arr)?;
+    let sig = Signature::from_slice(&sig_arr)?;
     let timestamp = headers
         .get("X-Signature-Timestamp")?
         .ok_or(SignatureValidationError::MissingTimestampHeader)?;
-    let pub_key = PublicKey::from_bytes(&hex::decode(pub_key_string)?)?;
+    let pub_key =
+        VerifyingKey::from_bytes(&hex::decode(pub_key_string)?.try_into().unwrap_or([0; 32]))?;
     let to_be_verified: Vec<u8> = timestamp
         .as_bytes()
         .iter()
@@ -61,10 +62,8 @@ pub enum SignatureValidationError {
     MissingTimestampHeader,
 }
 
-#[event(scheduled)]
-async fn scheduled(event: worker::ScheduledEvent, env: worker::Env, ctx: worker::ScheduleContext) {
-    
-}
+// #[event(scheduled)]
+// async fn scheduled(event: worker::ScheduledEvent, env: worker::Env, ctx: worker::ScheduleContext) {}
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
 pub struct TagMetadata {
