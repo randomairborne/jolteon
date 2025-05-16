@@ -2,7 +2,7 @@
   "name": "jolteon",
   "version": "0.0.0",
   "devDependencies": {
-    "wrangler": "3.19.0"
+    "wrangler": "4.15.1"
   },
   "private": true,
   "dependencies": {
